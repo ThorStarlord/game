@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Whack-a-Mole Game</title>
+  <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin: 20px 0;
+    }
+
+    .info {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+
+    .grid {
+      display: inline-block;
+      margin-top: 20px;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .cell img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .feedback {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+
+    .feedback.hit {
+      color: green;
+    }
+
+    .feedback.miss {
+      color: red;
+    }
+
+    .game-over {
+      margin-top: 50px;
+    }
+
+    .game-over h2 {
+      font-size: 2rem;
+    }
+
+    .game-over p {
+      font-size: 1.5rem;
+      margin: 20px 0;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script>
+    const { useState, useEffect } = React;
+
+    function App() {
+      const GRID_SIZE = 3;
+      const TIME_LIMIT = 30;
+
+      const [score, setScore] = useState(0);
+      const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+      const [molePosition, setMolePosition] = useState(getRandomPosition());
+      const [feedback, setFeedback] = useState("");
+      const [gameOver, setGameOver] = useState(false);
+
+      useEffect(() => {
+        if (timeLeft > 0) {
+          const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+          return () => clearTimeout(timer);
+        } else {
+          setGameOver(true);
+        }
+      }, [timeLeft]);
+
+      useEffect(() => {
+        if (!gameOver) {
+          const moleTimer = setInterval(() => setMolePosition(getRandomPosition()), 1000);
+          return () => clearInterval(moleTimer);
+        }
+      }, [gameOver]);
+
+      function getRandomPosition() {
+        const row = Math.floor(Math.random() * GRID_SIZE);
+        const col = Math.floor(Math.random() * GRID_SIZE);
+        return { row, col };
+      }
+
+      function handleCellClick(row, col) {
+        if (gameOver) return;
+
+        if (molePosition.row === row && molePosition.col === col) {
+          setScore(score + 1);
+          setFeedback("Hit!");
+        } else {
+          setScore(score - 1);
+          setFeedback("Miss!");
+        }
+
+        setTimeout(() => setFeedback(""), 1000);
+      }
+
+      const title = React.createElement("h1", null, "Simple Whack-a-Mole Game");
+
+      const info = React.createElement(
+        "div",
+        { className: "info" },
+        React.createElement("p", null, `Time Left: ${timeLeft}s`),
+        React.createElement("p", null, `Score: ${score}`)
+      );
+
+      const grid = React.createElement(
+        "div",
+        { className: "grid" },
+        Array.from({ length: GRID_SIZE }).map((_, row) =>
+          React.createElement(
+            "div",
+            { key: row, className: "row" },
+            Array.from({ length: GRID_SIZE }).map((_, col) =>
+              React.createElement(
+                "div",
+                {
+                  key: col,
+                  className: "cell",
+                  onClick: () => handleCellClick(row, col),
+                },
+                molePosition.row === row && molePosition.col === col
+                  ? React.createElement("img", { src: "mole.png", alt: "Mole" })
+                  : React.createElement("img", { src: "hole.png", alt: "Hole" })
+              )
+            )
+          )
+        )
+      );
+
+      const feedbackMessage =
+        feedback &&
+        React.createElement(
+          "p",
+          { className: `feedback ${feedback === "Hit!" ? "hit" : "miss"}` },
+          feedback
+        );
+
+      const gameOverMessage = React.createElement(
+        "div",
+        { className: "game-over" },
+        React.createElement(
+          "h2",
+          null,
+          score > 30 ? "Congratulations! You Win!" : "Game Over! Try Again!"
+        ),
+        React.createElement("p", null, `Final Score: ${score}`),
+        React.createElement(
+          "button",
+          { onClick: () => window.location.reload() },
+          "Play Again"
+        )
+      );
+
+      return React.createElement(
+        "div",
+        null,
+        title,
+        !gameOver ? React.createElement(React.Fragment, null, info, grid, feedbackMessage) : gameOverMessage
+      );
+    }
+
+    ReactDOM.render(React.createElement(App), document.getElementById("root"));
+  </script>
+</body>
+</html>
